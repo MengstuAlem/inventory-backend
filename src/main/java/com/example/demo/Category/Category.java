@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.antlr.v4.runtime.misc.NotNull;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
 import java.util.List;
@@ -25,5 +26,11 @@ public class Category {
     @NotNull
     private String name;
     private String description;
+    @CreationTimestamp
     private Instant created;
+
+
 }
+
+
+

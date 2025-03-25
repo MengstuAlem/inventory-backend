@@ -16,4 +16,10 @@ public class ProfileOfUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String userName;
+    private String password;
+    private String email;
+    private String role;
+    private byte[] storedHash;
+    private byte[] storedSalt;
 }

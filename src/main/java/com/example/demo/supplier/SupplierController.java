@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("suppliers")
-
+@CrossOrigin(origins = "http://localhost:4200")
 public class SupplierController {
     private final SupplierService supplierService;
     private static final Logger logger = LoggerFactory.getLogger(SupplierController.class);
