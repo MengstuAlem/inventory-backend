@@ -2,6 +2,7 @@ package com.example.demo.jwt.util;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -9,65 +10,51 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.util.Base64;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
+
 
 @Service
 public class JwtUtil {
 
-    @Value("${jwt.secret}")
-    private String SECRET_KEY;
+    private final SecretKey signingKey;
+    private final long tokenValidity = 1000 * 60 * 60 * 10; // 10 hours
 
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+    public JwtUtil(@Value("${jwt.secret}") String base64Secret) {
+        // Decode the base64 secret key
+        byte[] keyBytes = Base64.getDecoder().decode(base64Secret);
+        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+    public String generateToken(UserDetails userDetails) {
+        return Jwts.builder()
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + tokenValidity))
+                .signWith(signingKey, SignatureAlgorithm.HS512)
+                .compact();
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
-
-    private Claims extractAllClaims(String token) {
-        return Jwts
-                .parserBuilder()
-                .setSigningKey(getSigningKey()).build()
+    public Claims extractAllClaims(String token) throws JwtException {
+        return Jwts.parserBuilder()
+                .setSigningKey(signingKey)
+                .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
 
-    private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+    public String extractUsername(String token) throws JwtException {
+        return extractAllClaims(token).getSubject();
     }
 
-    public String generateToken(UserDetails userDetails) {
-        Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, userDetails.getUsername());
+    public boolean validateToken(String token, UserDetails userDetails) {
+        try {
+            final String username = extractUsername(token);
+            return username.equals(userDetails.getUsername()) &&
+                    !extractAllClaims(token).getExpiration().before(new Date());
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
     }
 
-    private String createToken(Map<String, Object> claims, String subject) {
-        return Jwts
-                .builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
-                .compact();
-    }
 
-    public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (
-                username.equals(userDetails.getUsername()) && !isTokenExpired(token)
-        );
-    }
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = Base64.getDecoder().decode(SECRET_KEY);
-        return Keys.hmacShaKeyFor(keyBytes); // secure key for HS512
-    }
+
 }

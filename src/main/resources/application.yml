@@ -2,4 +2,4 @@ client:
   url: http://localhost:4200
 
 jwt:
-  secret: 8fhgeigayuf64oq8ltw36pi84wl87trf8afpw7ty934t7fwaeGTFyugfldlsjfdglja
+  secret: "dDHVQBJD5+l+5IDJIl9BQKjNdiaO0S8uFvfRGhsA6/9T4WzAdtJI09VruaU480c2XJk59EzG9NIO3CIZoBtyXw=="

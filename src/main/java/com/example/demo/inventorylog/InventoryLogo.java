@@ -1,12 +1,9 @@
-package com.example.demo.logo;
+package com.example.demo.inventorylog;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
 
 import java.time.Instant;
-
 public class InventoryLogo {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE ,generator = "sequenceGenerator")
