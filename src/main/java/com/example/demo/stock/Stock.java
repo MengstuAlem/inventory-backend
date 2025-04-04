@@ -1,6 +1,6 @@
 package com.example.demo.stock;
 
-import com.example.demo.User.ProfileOfUser;
+import com.example.demo.User.UserEntity;
 import com.example.demo.product.Product;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -30,6 +30,6 @@ public class Stock {
     @JsonIgnoreProperties(value = { "category", "supplier" }, allowSetters = true)
     private Product product;
     @ManyToOne
-    private ProfileOfUser user;
+    private UserEntity user;
 
 }

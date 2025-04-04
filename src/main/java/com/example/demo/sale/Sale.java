@@ -1,6 +1,6 @@
 package com.example.demo.sale;
 
-import com.example.demo.User.ProfileOfUser;
+import com.example.demo.User.UserEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,5 +25,5 @@ public class Sale {
     SaleStatus status;
     private Instant createdAt;
     @ManyToOne
-    ProfileOfUser user;
+    UserEntity user;
 }

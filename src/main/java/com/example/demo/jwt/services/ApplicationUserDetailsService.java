@@ -1,77 +1,83 @@
 package com.example.demo.jwt.services;
 
-import com.example.demo.User.ProfileOfUser;
-import com.example.demo.User.ProfileOfUserRepository;
+
+import com.example.demo.User.UserEntity;
+import com.example.demo.User.UserService;
 import com.example.demo.jwt.models.UserPrincipal;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 
 @Service
+@AllArgsConstructor
 public class ApplicationUserDetailsService implements UserDetailsService {
 
-    ProfileOfUserRepository  profileOfUserRepository;
-    public ApplicationUserDetailsService(ProfileOfUserRepository profileOfUserRepository) {
-        this.profileOfUserRepository = profileOfUserRepository;
-    }
+    private final UserService userService;
+
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return new UserPrincipal(profileOfUserRepository.getUserByEmail(email));
+    public UserDetails loadUserByUsername(String email)
+            throws UsernameNotFoundException {
+        return new UserPrincipal(userService.searchByEmail(email));
     }
 
-    public static Boolean verifyPasswordHash(
-            String password,
-            byte[] storedHash,
-            byte[] storedSalt
-    ) throws NoSuchAlgorithmException {
+    public UserEntity authenticate(String email, String password)
+            throws NoSuchAlgorithmException {
+        if (
+                email.isEmpty() || password.isEmpty()
+        ) throw new BadCredentialsException("Unauthorized");
 
-        byte[] computedHash = hashPassword(password, storedSalt);
-        return MessageDigest.isEqual(computedHash, storedHash);
-    }
+        var userEntity = userService.searchByEmail(email);
 
-    public ProfileOfUser authenticate(String email, String password) throws NoSuchAlgorithmException {
-        if (email == null || email.isBlank() || password == null || password.isBlank()) {
-            throw new BadCredentialsException("Unauthorized: Email or password is empty");
-        }
+        if (userEntity == null) throw new BadCredentialsException("Unauthorized");
 
-        // Retrieve user from database
-        var userEntity = profileOfUserRepository.getUserByEmail(email);
-        if (userEntity == null) {
-            throw new BadCredentialsException("Unauthorized: User not found");
-        }
-
-        // Verify password
-        boolean verified = verifyPasswordHash(
+        var verified = verifyPasswordHash(
                 password,
                 userEntity.getStoredHash(),
                 userEntity.getStoredSalt()
         );
 
-        if (!verified) {
-            throw new BadCredentialsException("Unauthorized: Incorrect password");
-        }
+        if (!verified) throw new BadCredentialsException("Unauthorized");
 
         return userEntity;
     }
 
+    private Boolean verifyPasswordHash(
+            String password,
+            byte[] storedHash,
+            byte[] storedSalt
+    ) throws NoSuchAlgorithmException {
+        if (
+                password.isBlank() || password.isEmpty()
+        ) throw new IllegalArgumentException(
+                "Password cannot be empty or whitespace only string."
+        );
 
-    public static byte[] hashPassword(String password, byte[] salt) throws NoSuchAlgorithmException {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        md.update(salt);
-        return md.digest(password.getBytes());
-    }
+        if (storedHash.length != 64) throw new IllegalArgumentException(
+                "Invalid length of password hash (64 bytes expected)"
+        );
 
-    public static byte[] generateSalt() {
-        SecureRandom random = new SecureRandom();
-        byte[] salt = new byte[16]; // 16-byte salt
-        random.nextBytes(salt);
-        return salt;
+        if (storedSalt.length != 128) throw new IllegalArgumentException(
+                "Invalid length of password salt (64 bytes expected)."
+        );
+
+        var md = MessageDigest.getInstance("SHA-512");
+        md.update(storedSalt);
+
+        var computedHash = md.digest(password.getBytes(StandardCharsets.UTF_8));
+
+        for (int i = 0; i < computedHash.length; i++) {
+            if (computedHash[i] != storedHash[i]) return false;
+        }
+
+        // The above for loop is the same as below
+
+        return MessageDigest.isEqual(computedHash, storedHash);
     }
 }

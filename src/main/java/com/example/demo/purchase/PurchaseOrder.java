@@ -1,7 +1,6 @@
 package com.example.demo.purchase;
 
-import com.example.demo.User.ProfileOfUser;
-import com.example.demo.product.Product;
+import com.example.demo.User.UserEntity;
 import com.example.demo.supplier.Supplier;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,6 +28,6 @@ public class PurchaseOrder {
     @ManyToOne(fetch = FetchType.LAZY)
     private Supplier supplier;
     @ManyToOne(fetch = FetchType.LAZY)
-    private ProfileOfUser user;
+    private UserEntity user;
 
 }
